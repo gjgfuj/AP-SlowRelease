@@ -634,11 +634,10 @@ class HintLabel(RecycleDataViewBehavior, MDBoxLayout):
                 if child.collide_point(*touch.pos):
                     key = child.sort_key
                     if key == "status":
-                        parent.hint_sorter = lambda element: status_sort_weights[element["status"]["hint"]["status"]]
+                        parent.hint_sorter = lambda element: element["status"]["hint"]["status"]
                     else:
-                        parent.hint_sorter = lambda element: (
-                            remove_between_brackets.sub("", element[key]["text"]).lower()
-                        )
+                        parent.hint_sorter = \
+                            lambda element: remove_between_brackets.sub("", element[key]["text"]).lower()
                     if key == parent.sort_key:
                         # second click reverses order
                         parent.reversed = not parent.reversed
@@ -717,6 +716,10 @@ class MessageBoxLabel(MDLabel):
 
 
 class MessageBox(Popup):
+    class MessageBoxLabel(MDLabel):
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self._label.refresh()
 
     def __init__(self, title, text, error=False, **kwargs):
         label = MessageBoxLabel(text=text)
@@ -724,46 +727,6 @@ class MessageBox(Popup):
         super().__init__(title=title, content=label, size_hint=(0.5, None), width=max(100, int(label.width) + 40),
                          separator_color=separator_color, **kwargs)
         self.height += max(0, label.height - 18)
-
-
-class ButtonsPrompt(MDDialog):
-    def __init__(self, title: str, text: str, response: typing.Callable[[str], None],
-                 *prompts: str, **kwargs) -> None:
-        """
-        Customizable popup box that lets you create any number of buttons. The text of the pressed button is returned to
-        the callback.
-
-        :param title: The title of the popup.
-        :param text: The message prompt in the popup.
-        :param response: A callable that will get called when the user presses a button. The prompt will not close
-         itself so should be done here if you want to close it when certain buttons are pressed.
-        :param prompts: Any number of strings to be used for the buttons.
-        """
-        layout = MDBoxLayout(orientation="vertical")
-        label = MessageBoxLabel(text=text)
-        layout.add_widget(label)
-
-        def on_release(button: MDButton, *args) -> None:
-            response(button.text)
-
-        buttons = [MDDivider()]
-        for prompt in prompts:
-            button = MDButton(
-                MDButtonText(text=prompt, pos_hint={"center_x": 0.5, "center_y": 0.5}),
-                on_release=on_release,
-                style="text",
-                theme_width="Custom",
-                size_hint_x=1,
-            )
-            button.text = prompt
-            buttons.extend([button, MDDivider()])
-
-        super().__init__(
-            MDDialogHeadlineText(text=title),
-            MDDialogSupportingText(text=text),
-            MDDialogButtonContainer(*buttons, orientation="vertical"),
-            **kwargs,
-        )
 
 
 class ClientTabs(MDTabsSecondary):
@@ -1316,6 +1279,8 @@ class KivyJSONtoTextParser(JSONtoTextParser):
         for name, code in color_codes.items():
             color_codes[name] = getattr(colors, name, code)
         self.color_codes = color_codes
+        self.theme_style = colors.theme_style
+        self.primary_palette = colors.primary_palette
         super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):

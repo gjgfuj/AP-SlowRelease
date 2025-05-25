@@ -155,28 +155,49 @@ class TunicWorld(World):
                 self.options.plando_connections.value.insert(index, new_cxn)
 
             for index, cxn in enumerate(self.options.plando_connections):
-                replacement = None
-                if self.options.decoupled:
-                    # flip any that are pointing to exit to point to entrance so that I don't have to deal with it
-                    if cxn.direction == "exit":
-                        replacement = PlandoConnection(cxn.exit, cxn.entrance, "entrance", cxn.percentage)
-                    # if decoupled is on and you plando'd an entrance to itself but left the direction as both
-                    if cxn.direction == "both" and cxn.entrance == cxn.exit:
-                        replacement = PlandoConnection(cxn.entrance, cxn.exit, "entrance")
-                # if decoupled is off, just convert these to both
-                elif cxn.direction != "both":
-                    replacement = PlandoConnection(cxn.entrance, cxn.exit, "both", cxn.percentage)
+                # making shops second to simplify other things later
+                if cxn.entrance.startswith("Shop"):
+                    replacement = PlandoConnection(cxn.exit, "Shop Portal", "both")
+                    self.options.plando_connections.value.remove(cxn)
+                    self.options.plando_connections.value.insert(index, replacement)
+                elif cxn.exit.startswith("Shop"):
+                    replacement = PlandoConnection(cxn.entrance, "Shop Portal", "both")
+                    self.options.plando_connections.value.remove(cxn)
+                    self.options.plando_connections.value.insert(index, replacement)
 
-                if replacement:
-                    replace_connection(cxn, replacement, index)
+        # Universal tracker stuff, shouldn't do anything in standard gen
+        if hasattr(self.multiworld, "re_gen_passthrough"):
+            if "TUNIC" in self.multiworld.re_gen_passthrough:
+                self.using_ut = True
+                self.passthrough = self.multiworld.re_gen_passthrough["TUNIC"]
+                self.options.start_with_sword.value = self.passthrough["start_with_sword"]
+                self.options.keys_behind_bosses.value = self.passthrough["keys_behind_bosses"]
+                self.options.sword_progression.value = self.passthrough["sword_progression"]
+                self.options.ability_shuffling.value = self.passthrough["ability_shuffling"]
+                self.options.laurels_zips.value = self.passthrough["laurels_zips"]
+                self.options.ice_grappling.value = self.passthrough["ice_grappling"]
+                self.options.ladder_storage.value = self.passthrough["ladder_storage"]
+                self.options.ladder_storage_without_items = self.passthrough["ladder_storage_without_items"]
+                self.options.lanternless.value = self.passthrough["lanternless"]
+                self.options.maskless.value = self.passthrough["maskless"]
+                self.options.hexagon_quest.value = self.passthrough["hexagon_quest"]
+                self.options.hexagon_quest_ability_type.value = self.passthrough.get("hexagon_quest_ability_type", 0)
+                self.options.entrance_rando.value = self.passthrough["entrance_rando"]
+                self.options.shuffle_ladders.value = self.passthrough["shuffle_ladders"]
+                self.options.grass_randomizer.value = self.passthrough.get("grass_randomizer", 0)
+                self.options.breakable_shuffle.value = self.passthrough.get("breakable_shuffle", 0)
+                self.options.laurels_location.value = self.options.laurels_location.option_anywhere
+                self.options.combat_logic.value = self.passthrough["combat_logic"]
 
-                if (self.options.entrance_layout == EntranceLayout.option_direction_pairs
-                        and not verify_plando_directions(cxn)):
-                    raise OptionError(f"TUNIC: Player {self.player_name} has invalid plando connections. "
-                                      f"They have Direction Pairs enabled and the connection "
-                                      f"{cxn.entrance} --> {cxn.exit} does not abide by this option.")
+                self.options.fixed_shop.value = self.options.fixed_shop.option_false
+                if ("ziggurat2020_3, ziggurat2020_1_zig2_skip" in self.passthrough["Entrance Rando"].keys()
+                        or "ziggurat2020_3, ziggurat2020_1_zig2_skip" in self.passthrough["Entrance Rando"].values()):
+                    self.options.fixed_shop.value = self.options.fixed_shop.option_true
 
-        ut_stuff.setup_options_from_slot_data(self)
+            else:
+                self.using_ut = False
+        else:
+            self.using_ut = False
 
         self.player_location_table = standard_location_name_to_id.copy()
 

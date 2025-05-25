@@ -1994,7 +1994,7 @@ async def process_client_cmd(ctx: Context, client: Client, args: dict):
             ctx.save()
             for slot in concerning_slots:
                 ctx.on_changed_hints(client.team, slot)
-
+        
         elif cmd == 'StatusUpdate':
             if client.no_locations and args["status"] == ClientStatus.CLIENT_GOAL:
                 await ctx.send_msgs(client, [{'cmd': 'InvalidPacket', "type": "cmd",

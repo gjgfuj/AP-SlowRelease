@@ -12,6 +12,7 @@ from ..strings.skill_names import Skill, all_mod_skills, all_vanilla_skills
 from ..strings.tool_names import ToolMaterial, Tool
 from ..strings.wallet_item_names import Wallet
 
+fishing_regions = (Region.beach, Region.town, Region.forest, Region.mountain, Region.island_south, Region.island_west)
 vanilla_skill_items = ("Farming Level", "Mining Level", "Foraging Level", "Fishing Level", "Combat Level")
 
 

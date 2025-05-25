@@ -1,5 +1,3 @@
-from functools import cached_property
-
 from Utils import cache_self1
 from .base_logic import BaseLogicMixin, BaseLogic
 from ..data import fish_data
@@ -24,10 +22,6 @@ class FishingLogicMixin(BaseLogicMixin):
 
 
 class FishingLogic(BaseLogic):
-    @cache_self1
-    def can_fish_anywhere(self, difficulty: int = 0) -> StardewRule:
-        return self.logic.fishing.can_fish(difficulty) & self.logic.region.can_reach_any(fishing_regions)
-
     def can_fish_in_freshwater(self) -> StardewRule:
         return self.logic.fishing.can_fish() & self.logic.region.can_reach_any((Region.forest, Region.town, Region.mountain))
 

@@ -86,7 +86,6 @@ Type: dirifempty; Name: "{app}"
 [InstallDelete]
 Type: files; Name: "{app}\*.exe"
 Type: files; Name: "{app}\data\lua\connector_pkmn_rb.lua"
-Type: files; Name: "{app}\data\lua\connector_ff1.lua"
 Type: filesandordirs; Name: "{app}\SNI\lua*"
 Type: filesandordirs; Name: "{app}\EnemizerCLI*"
 #include "installdelete.iss"
