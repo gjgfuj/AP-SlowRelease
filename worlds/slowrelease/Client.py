@@ -31,19 +31,19 @@ class SlowReleaseContext(TrackerGameContext):
     async def autoplayer(self):
         print("Autoplayer")
         inbk = False
-        while not self.player_id:
+        while not self.tracker_core.player_id:
             await asyncio.sleep(1)
-        world: World = self.multiworld.worlds[self.player_id]
-        current_region : Region = self.multiworld.get_region(world.origin_region_name, self.player_id)
+        world: World = self.tracker_core.multiworld.worlds[self.tracker_core.player_id]
+        current_region : Region = self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id)
         while True:
-            if len(self.locations_available) > 0:
+            if len(self.tracker_core.locations_available) > 0:
                 inbk = False
                 goal_location = None
                 visited_regions = []
-                regions = [*map(lambda e: e.connected_region,self.multiworld.get_region(world.origin_region_name, self.player_id).get_exits())]
+                regions = [*map(lambda e: e.connected_region,self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id).get_exits())]
                 if self.region_mode:
                     while not goal_location:
-                        for location in self.locations_available:
+                        for location in self.tracker_core.locations_available:
                             location = world.get_location(world.location_id_to_name[location])
                             if location.parent_region == current_region:
                                 goal_location = location.address
@@ -58,7 +58,7 @@ class SlowReleaseContext(TrackerGameContext):
                             self.autoplayer_log(f"Attempting to go to: {current_region.name}")
                             await asyncio.sleep(0.1)
                 else:
-                    goal_location = random.choice(self.locations_available)
+                    goal_location = random.choice(self.tracker_core.locations_available)
                     self.autoplayer_log(f"Going for {self.location_names.lookup_in_game(goal_location)}")
                 await asyncio.sleep(self.time_per)
                 await self.check_locations([goal_location])
@@ -83,6 +83,12 @@ class SlowReleaseContext(TrackerGameContext):
             if self.autoplayer_task:
                 self.autoplayer_task.cancel()
             self.autoplayer_task = asyncio.create_task(self.autoplayer())
+            self.autoplayer_task.add_done_callback(self.autoplayer_done)
+    def autoplayer_done(self, autoplayer_task):
+        try:
+            _ = autoplayer_task.result()
+        except Exception as e:
+            logger.error("Autoplayer Error", exc_info=True)
     def disconnect(self, *args):
         if self.autoplayer_task:
             self.autoplayer_task.cancel()
