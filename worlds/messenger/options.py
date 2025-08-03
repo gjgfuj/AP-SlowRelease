@@ -149,7 +149,8 @@ class MusicBox(DefaultOnToggle):
 
 class NotesNeeded(Range):
     """
-    How many notes need to be found in order to access the Music Box. 6 are always needed to enter, so this places the others in your start inventory.
+    How many notes need to be found in order to access the Music Box.
+    6 are always needed to enter, so this places the others in your start inventory.
     """
     display_name = "Notes Needed"
     range_start = 1

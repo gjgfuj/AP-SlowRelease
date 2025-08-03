@@ -719,10 +719,6 @@ class MessageBoxLabel(MDLabel):
 
 
 class MessageBox(Popup):
-    class MessageBoxLabel(MDLabel):
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            self._label.refresh()
 
     def __init__(self, title, text, error=False, **kwargs):
         label = MessageBoxLabel(text=text)

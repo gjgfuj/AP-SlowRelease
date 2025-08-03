@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import Mock
 
-from .. import SVTestBase, fill_namespace_with_default, skip_long_tests
+from ..bases import skip_long_tests, SVTestBase
 from ..options.presets import allsanity_mods_6_x_x
 from ..options.utils import fill_namespace_with_default
 from ... import STARDEW_VALLEY

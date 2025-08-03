@@ -189,6 +189,10 @@ _speedups.html
 #undertale stuff
 /Undertale/
 
+# Fuzzer Things
+fuzz.py
+fuzz_output/*
+
 # OS General Files
 .DS_Store
 .AppleDouble

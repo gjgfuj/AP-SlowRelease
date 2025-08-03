@@ -1,7 +1,7 @@
 import logging
 import typing
 from random import Random
-from typing import Dict, Any, Iterable, Optional, List, TextIO
+from typing import Dict, Any, Optional, List, TextIO
 
 import entrance_rando
 from BaseClasses import Region, Location, Item, Tutorial, ItemClassification, MultiWorld, CollectionState

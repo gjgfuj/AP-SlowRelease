@@ -66,6 +66,7 @@ class MessengerWeb(WebWorld):
     )
 
     tutorials = [tut_en, plando_en]
+    option_groups = option_groups
 
 
 class MessengerWorld(World):

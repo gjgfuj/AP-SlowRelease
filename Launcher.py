@@ -468,15 +468,6 @@ def run_gui(launch_components: list[Component], args: Any) -> None:
                 if key in range(32, 126):
                     self.search_box.text += codepoint
 
-        def _on_keyboard(self, window: Window, key: int, scancode: int, codepoint: str, modifier: list[str]):
-            # Activate search as soon as we start typing, no matter if we are focused on the search box or not.
-            # Focus first, then capture the first character we type, otherwise it gets swallowed and lost.
-            # Limit text input to ASCII non-control characters (space bar to tilde).
-            if not self.search_box.focus:
-                self.search_box.focus = True
-                if key in range(32, 126):
-                    self.search_box.text += codepoint
-
         def _stop(self, *largs):
             # ran into what appears to be https://groups.google.com/g/kivy-users/c/saWDLoYCSZ4 with PyCharm.
             # Closing the window explicitly cleans it up.

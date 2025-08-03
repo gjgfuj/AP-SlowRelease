@@ -131,19 +131,11 @@ Opting out of using indirect conditions should only be used by games that *reall
 
 ---
 
-### I uploaded the generated output of my world to the webhost and webhost is erroring on corrupted multidata
-
-The error `Could not load multidata. File may be corrupted or incompatible.` occurs when uploading a locally generated
-file where there is an issue with the multidata contained within it. It may come with a description like
-`(No module named 'worlds.myworld')` or `(global 'worlds.myworld.names.ItemNames' is forbidden)`
-
-Pickling is a way to compress python objects such that they can be decompressed and be used to rebuild the
-python objects. This means that if one of your custom class instances ends up in the multidata, the server would not
-be able to load that custom class to decompress the data, which can fail either because the custom class is unknown
-(because it cannot load your world module) or the class it's attempting to import to decompress is deemed unsafe.
-
-Common situations where this can happen include:
-* Using Option instances directly in slot_data. Ex: using `options.option_name` instead of `options.option_name.value`.
-  Also, consider using the `options.as_dict("option_name", "option_two")` helper.
-* Using enums as Location/Item names in the datapackage. When building out `location_name_to_id` and `item_name_to_id`,
-  make sure that you are not using your enum class for either the names or ids in these mappings.
+So when the game itself does not follow this assumption, the options are:
+- Modify the game to make that location/connection repeatable
+- If there are both missable and repeatable ways to check the location/traverse the connection, then write logic for 
+  only the repeatable ways
+- Don't generate the missable location/connection at all
+  - For connections, any logical regions will still need to be reachable through other, *repeatable* connections
+  - For locations, this may require game changes to remove the vanilla item if it affects logic
+- Decide that resetting the save file is part of the game's logic, and warn players about that

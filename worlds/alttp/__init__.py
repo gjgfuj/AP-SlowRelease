@@ -549,7 +549,7 @@ class ALTTPWorld(World):
         if self.options.mode == 'standard' and self.options.small_key_shuffle \
                 and self.options.small_key_shuffle != small_key_shuffle.option_universal and \
                 self.options.small_key_shuffle != small_key_shuffle.option_own_dungeons:
-            world.local_early_items[player]["Small Key (Hyrule Castle)"] = 1
+            self.multiworld.local_early_items[self.player]["Small Key (Hyrule Castle)"] = 1
 
     @classmethod
     def stage_pre_fill(cls, world):
