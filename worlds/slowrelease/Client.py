@@ -8,10 +8,13 @@ tracker_loaded = True
 from worlds.tracker.TrackerClient import TrackerGameContext, TrackerCommandProcessor
 
 class SlowReleaseCommandProcessor(TrackerCommandProcessor):
-    def _cmd_time(self, time):
-        """Set the time per check. Value in seconds."""
-        self.ctx.time_per = float(time)
-        logger.info(f"Set time per check to {self.ctx.time_per}")
+    def _cmd_time(self, time=None):
+        """Set the time per check in seconds, or display current setting if no argument provided."""
+        if time is None:
+            logger.info(f"Current time per check: {self.ctx.time_per} seconds")
+        else:
+            self.ctx.time_per = float(time)
+            logger.info(f"Set time per check to {self.ctx.time_per} seconds")
 
     def _cmd_region_mode(self):
         """Toggle Region mode (i.e. make the slow release client act more like a player by handling one region of the world at a time.)"""
@@ -100,6 +103,9 @@ def launch(*args):
     async def main(args):
         ctx = SlowReleaseContext(args.connect, args.password)
         ctx.auth = args.name
+        # Set time_per from command line argument if provided
+        if args.time:
+            ctx.time_per = args.time
         ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
 
         if tracker_loaded:
@@ -115,6 +121,7 @@ def launch(*args):
 
     parser = get_base_parser(description="Slow Release Archipelago Client, for text interfacing.")
     parser.add_argument('--name', default=None, help="Slot Name to connect as.")
+    parser.add_argument('--time', type=float, default=None, help="Time per check in seconds (default: 10)")
     parser.add_argument("url", nargs="?", help="Archipelago connection url")
     args = parser.parse_args(args)
 
