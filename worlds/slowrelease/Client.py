@@ -9,7 +9,7 @@ from worlds.tracker.TrackerClient import TrackerGameContext, TrackerCommandProce
 
 class SlowReleaseCommandProcessor(TrackerCommandProcessor):
     def _cmd_time(self, time):
-        """Set the time per check."""
+        """Set the time per check. Value in seconds."""
         self.ctx.time_per = float(time)
         logger.info(f"Set time per check to {self.ctx.time_per}")
 
