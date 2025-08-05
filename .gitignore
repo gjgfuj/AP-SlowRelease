@@ -4,11 +4,13 @@
 *_Spoiler.txt
 *.bmbp
 *.apbp
+*.apcivvi
 *.apl2ac
 *.apm3
 *.apmc
 *.apz5
 *.aptloz
+*.aptww
 *.apemerald
 *.pyc
 *.pyd
@@ -54,7 +56,6 @@ success.txt
 output/
 Output Logs/
 /factorio/
-/Minecraft Forge Server/
 /WebHostLib/static/generated
 /freeze_requirements.txt
 /Archipelago.zip
@@ -182,17 +183,15 @@ _speedups.c
 _speedups.cpp
 _speedups.html
 
-# minecraft server stuff
-jdk*/
-minecraft*/
-minecraft_versions.json
-!worlds/minecraft/
-
 # pyenv
 .python-version
 
 #undertale stuff
 /Undertale/
+
+# Fuzzer Things
+fuzz.py
+fuzz_output/*
 
 # OS General Files
 .DS_Store

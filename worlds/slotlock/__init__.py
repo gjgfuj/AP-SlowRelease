@@ -267,17 +267,13 @@ class SlotLockWorld(AutoWorld.World):
                     #self.multiworld.regions.append(region)
                     for exit in currentOrigin.get_exits():
                         old_rule = exit.access_rule
-                        def rule(state: CollectionState, world=world, old_rule=old_rule):
-                            if state.stale[self.player]:
-                                state.stale[world.player]
+                        def rule(state: CollectionState, self=self, world=world, old_rule=old_rule):
                             #print(f"Lock Rule Called for {world.player}, value {state.has(f"Unlock_{world.player}",self.player)}")
                             return state.has(f"Unlock {world.player_name}",self.player) and old_rule(state)
                         exit.access_rule = rule
                     for location in currentOrigin.get_locations():
                         old_rule = location.access_rule
-                        def rule(state: CollectionState, world=world, old_rule=old_rule):
-                            if state.stale[self.player]:
-                                state.stale[world.player]
+                        def rule(state: CollectionState, self=self, world=world, old_rule=old_rule):
                             #print(f"Lock Rule Called for {world.player}, value {state.has(f"Unlock_{world.player}",self.player)}")
                             return state.has(f"Unlock {world.player_name}",self.player) and old_rule(state)
                         location.access_rule = rule
