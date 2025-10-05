@@ -1135,13 +1135,8 @@ def register_location_checks(ctx: Context, team: int, slot: int, locations: typi
         ctx.save()
 
 
-def collect_hints(ctx: Context, team: int, slot: int, item: typing.Union[int, str],
-                  status: HintStatus | None = None) -> typing.List[Hint]:
-    """
-    Collect a new hint for a given item id or name, with a given status.
-    If status is None (which is the default value), an automatic status will be determined from the item's quality.
-    """
-
+def collect_hints(ctx: Context, team: int, slot: int, item: typing.Union[int, str], auto_status: HintStatus) \
+        -> typing.List[Hint]:
     hints = []
     slots: typing.Set[int] = {slot}
     for group_id, group in ctx.groups.items():
@@ -1157,38 +1152,25 @@ def collect_hints(ctx: Context, team: int, slot: int, item: typing.Union[int, st
         else:
             found = location_id in ctx.location_checks[team, finding_player]
             entrance = ctx.er_hint_data.get(finding_player, {}).get(location_id, "")
-
+            new_status = auto_status
             if found:
-                status = HintStatus.HINT_FOUND
-            elif status is None:
-                if item_flags & ItemClassification.trap:
-                    status = HintStatus.HINT_AVOID
-                else:
-                    status = HintStatus.HINT_PRIORITY
-
-            hints.append(
-                Hint(receiving_player, finding_player, location_id, item_id, found, entrance, item_flags, status)
-            )
+                new_status = HintStatus.HINT_FOUND
+            elif item_flags & ItemClassification.trap:
+                new_status = HintStatus.HINT_AVOID
+            hints.append(Hint(receiving_player, finding_player, location_id, item_id, found, entrance,
+                                       item_flags, new_status))
 
     return hints
 
 
-def collect_hint_location_name(ctx: Context, team: int, slot: int, location: str,
-                               status: HintStatus | None = HintStatus.HINT_UNSPECIFIED) -> typing.List[Hint]:
-    """
-    Collect a new hint for a given location name, with a given status (defaults to "unspecified").
-    If None is passed for the status, then an automatic status will be determined from the item's quality.
-    """
+def collect_hint_location_name(ctx: Context, team: int, slot: int, location: str, auto_status: HintStatus) \
+        -> typing.List[Hint]:
     seeked_location: int = ctx.location_names_for_game(ctx.games[slot])[location]
-    return collect_hint_location_id(ctx, team, slot, seeked_location, status)
+    return collect_hint_location_id(ctx, team, slot, seeked_location, auto_status)
 
 
-def collect_hint_location_id(ctx: Context, team: int, slot: int, seeked_location: int,
-                             status: HintStatus | None = HintStatus.HINT_UNSPECIFIED) -> typing.List[Hint]:
-    """
-    Collect a new hint for a given location id, with a given status (defaults to "unspecified").
-    If None is passed for the status, then an automatic status will be determined from the item's quality.
-    """
+def collect_hint_location_id(ctx: Context, team: int, slot: int, seeked_location: int, auto_status: HintStatus) \
+        -> typing.List[Hint]:
     prev_hint = ctx.get_hint(team, slot, seeked_location)
     if prev_hint:
         return [prev_hint]
@@ -1198,16 +1180,13 @@ def collect_hint_location_id(ctx: Context, team: int, slot: int, seeked_location
 
         found = seeked_location in ctx.location_checks[team, slot]
         entrance = ctx.er_hint_data.get(slot, {}).get(seeked_location, "")
-
+        new_status = auto_status
         if found:
-            status = HintStatus.HINT_FOUND
-        elif status is None:
-            if item_flags & ItemClassification.trap:
-                status = HintStatus.HINT_AVOID
-            else:
-                status = HintStatus.HINT_PRIORITY
-
-        return [Hint(receiving_player, slot, seeked_location, item_id, found, entrance, item_flags, status)]
+            new_status = HintStatus.HINT_FOUND
+        elif item_flags & ItemClassification.trap:
+            new_status = HintStatus.HINT_AVOID
+        return [Hint(receiving_player, slot, seeked_location, item_id, found, entrance, item_flags,
+                              new_status)]
     return []
 
 
@@ -1321,8 +1300,7 @@ class CommandProcessor(metaclass=CommandMeta):
                         argname += "=" + parameter.default
                 argtext += argname
                 argtext += " "
-            doctext = '\n    '.join(inspect.getdoc(method).split('\n'))
-            s += f"{self.marker}{command} {argtext}\n    {doctext}\n"
+            s += f"{self.marker}{command} {argtext}\n    {method.__doc__}\n"
         return s
 
     def _cmd_help(self):
@@ -1350,6 +1328,19 @@ class CommandProcessor(metaclass=CommandMeta):
 
 class CommonCommandProcessor(CommandProcessor):
     ctx: Context
+
+    def _cmd_countdown(self, seconds: str = "10") -> bool:
+        """Start a countdown in seconds"""
+        try:
+            timer = int(seconds, 10)
+        except ValueError:
+            timer = 10
+        else:
+            if timer > 60 * 60:
+                raise ValueError(f"{timer} is invalid. Maximum is 1 hour.")
+
+        async_start(countdown(self.ctx, timer))
+        return True
 
     def _cmd_options(self):
         """List all current options. Warning: lists password."""
@@ -1619,6 +1610,7 @@ class ClientMessageProcessor(CommonCommandProcessor):
     def get_hints(self, input_text: str, for_location: bool = False) -> bool:
         points_available = get_client_points(self.ctx, self.client)
         cost = self.ctx.get_hint_cost(self.client.slot)
+        auto_status = HintStatus.HINT_UNSPECIFIED if for_location else HintStatus.HINT_PRIORITY
         if not input_text:
             hints = {hint.re_check(self.ctx, self.client.team) for hint in
                      self.ctx.hints[self.client.team, self.client.slot]}
@@ -1644,9 +1636,9 @@ class ClientMessageProcessor(CommonCommandProcessor):
                 self.output(f"Sorry, \"{hint_name}\" is marked as non-hintable.")
                 hints = []
             elif not for_location:
-                hints = collect_hints(self.ctx, self.client.team, self.client.slot, hint_id)
+                hints = collect_hints(self.ctx, self.client.team, self.client.slot, hint_id, auto_status)
             else:
-                hints = collect_hint_location_id(self.ctx, self.client.team, self.client.slot, hint_id)
+                hints = collect_hint_location_id(self.ctx, self.client.team, self.client.slot, hint_id, auto_status)
 
         else:
             game = self.ctx.games[self.client.slot]
@@ -1666,18 +1658,16 @@ class ClientMessageProcessor(CommonCommandProcessor):
                     hints = []
                     for item_name in self.ctx.item_name_groups[game][hint_name]:
                         if item_name in self.ctx.item_names_for_game(game):  # ensure item has an ID
-                            hints.extend(collect_hints(self.ctx, self.client.team, self.client.slot, item_name))
+                            hints.extend(collect_hints(self.ctx, self.client.team, self.client.slot, item_name, auto_status))
                 elif not for_location and hint_name in self.ctx.item_names_for_game(game):  # item name
-                    hints = collect_hints(self.ctx, self.client.team, self.client.slot, hint_name)
+                    hints = collect_hints(self.ctx, self.client.team, self.client.slot, hint_name, auto_status)
                 elif hint_name in self.ctx.location_name_groups[game]:  # location group name
                     hints = []
                     for loc_name in self.ctx.location_name_groups[game][hint_name]:
                         if loc_name in self.ctx.location_names_for_game(game):
-                            hints.extend(
-                                collect_hint_location_name(self.ctx, self.client.team, self.client.slot, loc_name)
-                            )
+                            hints.extend(collect_hint_location_name(self.ctx, self.client.team, self.client.slot, loc_name, auto_status))
                 else:  # location name
-                    hints = collect_hint_location_name(self.ctx, self.client.team, self.client.slot, hint_name)
+                    hints = collect_hint_location_name(self.ctx, self.client.team, self.client.slot, hint_name, auto_status)
 
             else:
                 self.output(response)
@@ -1955,7 +1945,8 @@ async def process_client_cmd(ctx: Context, client: Client, args: dict):
 
                 target_item, target_player, flags = ctx.locations[client.slot][location]
                 if create_as_hint:
-                    hints.extend(collect_hint_location_id(ctx, client.team, client.slot, location))
+                    hints.extend(collect_hint_location_id(ctx, client.team, client.slot, location,
+                                                          HintStatus.HINT_UNSPECIFIED))
                 locs.append(NetworkItem(target_item, location, target_player, flags))
             ctx.notify_hints(client.team, hints, only_new=create_as_hint == 2, persist_even_if_found=True)
             if locs and create_as_hint:
@@ -1970,16 +1961,6 @@ async def process_client_cmd(ctx: Context, client: Client, args: dict):
             if not locations:
                 await ctx.send_msgs(client, [{"cmd": "InvalidPacket", "type": "arguments",
                                               "text": "CreateHints: No locations specified.", "original_cmd": cmd}])
-                return
-
-            try:
-                status = HintStatus(status)
-            except ValueError as err:
-                await ctx.send_msgs(client,
-                                    [{"cmd": "InvalidPacket", "type": "arguments",
-                                      "text": f"Unknown Status: {err}",
-                                      "original_cmd": cmd}])
-                return
 
             hints = []
 
@@ -2247,19 +2228,6 @@ class ServerCommandProcessor(CommonCommandProcessor):
         self.output(f"Could not find player {player_name} to collect")
         return False
 
-    def _cmd_countdown(self, seconds: str = "10") -> bool:
-        """Start a countdown in seconds"""
-        try:
-            timer = int(seconds, 10)
-        except ValueError:
-            timer = 10
-        else:
-            if timer > 60 * 60:
-                raise ValueError(f"{timer} is invalid. Maximum is 1 hour.")
-
-        async_start(countdown(self.ctx, timer))
-        return True
-
     @mark_raw
     def _cmd_release(self, player_name: str) -> bool:
         """Send out the remaining items from a player to their intended recipients."""
@@ -2381,9 +2349,9 @@ class ServerCommandProcessor(CommonCommandProcessor):
                     hints = []
                     for item_name_from_group in self.ctx.item_name_groups[game][item]:
                         if item_name_from_group in self.ctx.item_names_for_game(game):  # ensure item has an ID
-                            hints.extend(collect_hints(self.ctx, team, slot, item_name_from_group))
+                            hints.extend(collect_hints(self.ctx, team, slot, item_name_from_group, HintStatus.HINT_PRIORITY))
                 else:  # item name or id
-                    hints = collect_hints(self.ctx, team, slot, item)
+                    hints = collect_hints(self.ctx, team, slot, item, HintStatus.HINT_PRIORITY)
 
                 if hints:
                     self.ctx.notify_hints(team, hints)
@@ -2417,14 +2385,17 @@ class ServerCommandProcessor(CommonCommandProcessor):
 
             if usable:
                 if isinstance(location, int):
-                    hints = collect_hint_location_id(self.ctx, team, slot, location)
+                    hints = collect_hint_location_id(self.ctx, team, slot, location,
+                                                     HintStatus.HINT_UNSPECIFIED)
                 elif game in self.ctx.location_name_groups and location in self.ctx.location_name_groups[game]:
                     hints = []
                     for loc_name_from_group in self.ctx.location_name_groups[game][location]:
                         if loc_name_from_group in self.ctx.location_names_for_game(game):
-                            hints.extend(collect_hint_location_name(self.ctx, team, slot, loc_name_from_group))
+                            hints.extend(collect_hint_location_name(self.ctx, team, slot, loc_name_from_group,
+                                                                    HintStatus.HINT_UNSPECIFIED))
                 else:
-                    hints = collect_hint_location_name(self.ctx, team, slot, location)
+                    hints = collect_hint_location_name(self.ctx, team, slot, location,
+                                                       HintStatus.HINT_UNSPECIFIED)
                 if hints:
                     self.ctx.notify_hints(team, hints)
                 else:

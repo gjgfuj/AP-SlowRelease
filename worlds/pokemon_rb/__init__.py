@@ -713,8 +713,7 @@ class PokemonRedBlueWorld(World):
             "require_pokedex": self.options.require_pokedex.value,
             "area_1_to_1_mapping": self.options.area_1_to_1_mapping.value,
             "blind_trainers": self.options.blind_trainers.value,
-            "game_version": self.options.game_version.value,
-            "exp_all": self.options.exp_all.value,
+            "v5_update": True,
 
         }
         if self.options.type_chart_seed == "random" or self.options.type_chart_seed.value.isdigit():

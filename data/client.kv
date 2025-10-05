@@ -220,8 +220,6 @@
 <MessageBoxLabel>:
     theme_text_color: "Custom"
     text_color: 1, 1, 1, 1
-<MessageBox>:
-    height: self.content.texture_size[1] + 80
 <ScrollBox>:
     layout: layout
     bar_width: "12dp"
@@ -235,3 +233,8 @@
         spacing: 10
         size_hint_y: None
         height: self.minimum_height
+<MessageBoxLabel>:
+    valign: "middle"
+    halign: "center"
+    text_size: self.width, None
+    height: self.texture_size[1]

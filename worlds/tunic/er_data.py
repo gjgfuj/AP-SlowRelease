@@ -1,5 +1,5 @@
+from typing import Dict, NamedTuple, List, Optional, TYPE_CHECKING
 from enum import IntEnum
-from typing import NamedTuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from . import TunicWorld
@@ -36,7 +36,7 @@ class Portal(NamedTuple):
         return self.destination + ", " + self.scene() + self.tag
 
 
-portal_mapping: list[Portal] = [
+portal_mapping: List[Portal] = [
     Portal(name="Stick House Entrance", region="Overworld",
            destination="Sword Cave", tag="_", direction=Direction.north),
     Portal(name="Windmill Entrance", region="Overworld",
@@ -535,7 +535,7 @@ portal_mapping: list[Portal] = [
 class RegionInfo(NamedTuple):
     game_scene: str  # the name of the scene in the actual game
     dead_end: int = 0  # if a region has only one exit
-    outlet_region: str | None = None
+    outlet_region: Optional[str] = None
     is_fake_region: bool = False
 
 
@@ -553,7 +553,7 @@ class DeadEnd(IntEnum):
 
 
 # key is the AP region name. "Fake" in region info just means the mod won't receive that info at all
-tunic_er_regions: dict[str, RegionInfo] = {
+tunic_er_regions: Dict[str, RegionInfo] = {
     "Menu": RegionInfo("Fake", dead_end=DeadEnd.all_cats, is_fake_region=True),
     "Overworld": RegionInfo("Overworld Redux"),  # main overworld, the central area
     "Overworld Holy Cross": RegionInfo("Fake", dead_end=DeadEnd.all_cats, is_fake_region=True),  # main overworld holy cross checks
@@ -735,7 +735,6 @@ tunic_er_regions: dict[str, RegionInfo] = {
     "Rooted Ziggurat Lower Entry": RegionInfo("ziggurat2020_3"),  # the vanilla entry point side
     "Rooted Ziggurat Lower Front": RegionInfo("ziggurat2020_3"),  # the front for combat logic
     "Rooted Ziggurat Lower Mid Checkpoint": RegionInfo("ziggurat2020_3"),  # the mid-checkpoint before double admin
-    "Rooted Ziggurat Lower Miniboss Platform": RegionInfo("ziggurat2020_3"),  # the double admin platform
     "Rooted Ziggurat Lower Back": RegionInfo("ziggurat2020_3"),  # the boss side
     "Zig Skip Exit": RegionInfo("ziggurat2020_3", dead_end=DeadEnd.special, outlet_region="Rooted Ziggurat Lower Entry", is_fake_region=True),  # for use with fixed shop on
     "Rooted Ziggurat Portal Room Entrance": RegionInfo("ziggurat2020_3", outlet_region="Rooted Ziggurat Lower Back"),  # the door itself on the zig 3 side
@@ -776,6 +775,7 @@ tunic_er_regions: dict[str, RegionInfo] = {
     "Spirit Arena Victory": RegionInfo("Spirit Arena", dead_end=DeadEnd.all_cats, is_fake_region=True),
 }
 
+
 # this is essentially a pared down version of the region connections in rules.py, with some minor differences
 # the main purpose of this is to make it so that you can access every region
 # most items are excluded from the rules here, since we can assume Archipelago will properly place them
@@ -786,7 +786,7 @@ tunic_er_regions: dict[str, RegionInfo] = {
 # LS# refers to ladder storage difficulties
 # LS rules are used for region connections here regardless of whether you have being knocked out of the air in logic
 # this is because it just means you can reach the entrances in that region via ladder storage
-traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
+traversal_requirements: Dict[str, Dict[str, List[List[str]]]] = {
     "Overworld": {
         "Overworld Beach":
             [],
@@ -801,7 +801,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
         "Overworld Swamp Lower Entry":
             [],
         "Overworld Special Shop Entry":
-            [["LS1"]],
+            [["Hyperdash"], ["LS1"]],
         "Overworld Well Entry Area":
             [],
         "Overworld Ruined Passage Door":
@@ -823,7 +823,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
         "Overworld Tunnel Turret":
             [["IG1"], ["LS1"], ["Hyperdash"]],
         "Overworld Temple Door":
-            [["Bell Shuffle"], ["IG2"], ["LS3"], ["Forest Belltower Upper", "Overworld Belltower"]],
+            [["IG2"], ["LS3"], ["Forest Belltower Upper", "Overworld Belltower"]],
         "Overworld Southeast Cross Door":
             [],
         "Overworld Fountain Cross Door":
@@ -1229,7 +1229,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
     },
     "West Garden by Portal": {
         "West Garden Portal":
-            [["Fuse Shuffle"], ["West Garden South Checkpoint"]],
+            [["West Garden South Checkpoint"]],
         "West Garden Portal Item":
             [["Hyperdash"]],
     },
@@ -1468,8 +1468,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
 
     "Eastern Vault Fortress": {
         "Eastern Vault Fortress Gold Door":
-            [["IG2"], ["Fuse Shuffle"],
-             ["Fortress Exterior from Overworld", "Beneath the Vault Back", "Fortress Courtyard Upper"]],
+            [["IG2"], ["Fortress Exterior from Overworld", "Beneath the Vault Back", "Fortress Courtyard Upper"]],
     },
     "Eastern Vault Fortress Gold Door": {
         "Eastern Vault Fortress":
@@ -1515,7 +1514,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
 
     "Fortress Arena": {
         "Fortress Arena Portal":
-            [["Fuse Shuffle"], ["Fortress Exterior from Overworld", "Beneath the Vault Back", "Eastern Vault Fortress"]],
+            [["Fortress Exterior from Overworld", "Beneath the Vault Back", "Eastern Vault Fortress"]],
     },
     "Fortress Arena Portal": {
         "Fortress Arena":
@@ -1548,7 +1547,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
 
     "Quarry Entry": {
         "Quarry Portal":
-            [["Fuse Shuffle"], ["Quarry Connector"]],
+            [["Quarry Connector"]],
         "Quarry":
             [],
         "Monastery Rope":
@@ -1594,7 +1593,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
         "Even Lower Quarry":
             [],
         "Lower Quarry Zig Door":
-            [["Fuse Shuffle"], ["Quarry", "Quarry Connector"], ["IG3"]],
+            [["Quarry", "Quarry Connector"], ["IG3"]],
     },
     "Monastery Rope": {
         "Quarry Back":
@@ -1637,19 +1636,13 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
             [["Hyperdash"]],
         "Rooted Ziggurat Lower Front":
             [],
-        "Rooted Ziggurat Lower Miniboss Platform":
-            [],
-    },
-    "Rooted Ziggurat Lower Miniboss Platform": {
-        "Rooted Ziggurat Lower Mid Checkpoint":
-            [],
         "Rooted Ziggurat Lower Back":
-            []
+            [],
     },
     "Rooted Ziggurat Lower Back": {
         "Rooted Ziggurat Lower Entry":
             [["LS2"]],
-        "Rooted Ziggurat Lower Miniboss Platform":
+        "Rooted Ziggurat Lower Mid Checkpoint":
             [["Hyperdash"], ["IG1"]],
         "Rooted Ziggurat Portal Room Entrance":
             [],
@@ -1665,7 +1658,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
     },
     "Rooted Ziggurat Portal Room": {
         "Rooted Ziggurat Portal Room Exit":
-            [["Fuse Shuffle"], ["Rooted Ziggurat Lower Back"]],
+            [["Rooted Ziggurat Lower Back"]],
         "Rooted Ziggurat Portal":
             [],
     },
@@ -1749,6 +1742,7 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
         "Cathedral Main":
             [],
     },
+
     "Cathedral Gauntlet Checkpoint": {
         "Cathedral Gauntlet":
             [],
@@ -1768,13 +1762,13 @@ traversal_requirements: dict[str, dict[str, list[list[str]]]] = {
         "Far Shore to East Forest Region":
             [["Hyperdash"]],
         "Far Shore to Quarry Region":
-            [["Fuse Shuffle"], ["Quarry Connector", "Quarry"]],
+            [["Quarry Connector", "Quarry"]],
         "Far Shore to Library Region":
-            [["Fuse Shuffle"], ["Library Lab"]],
+            [["Library Lab"]],
         "Far Shore to West Garden Region":
-            [["Fuse Shuffle"], ["West Garden South Checkpoint"]],
+            [["West Garden South Checkpoint"]],
         "Far Shore to Fortress Region":
-            [["Fuse Shuffle"], ["Fortress Exterior from Overworld", "Beneath the Vault Back", "Eastern Vault Fortress"]],
+            [["Fortress Exterior from Overworld", "Beneath the Vault Back", "Eastern Vault Fortress"]],
     },
     "Far Shore to Spawn Region": {
         "Far Shore":

@@ -1,16 +1,16 @@
-from enum import IntEnum
 from typing import TYPE_CHECKING, NamedTuple
 
+from enum import IntEnum
 from BaseClasses import CollectionState, Region
 from worlds.generic.Rules import set_rule
-
-from .constants import base_id
+from .rules import has_sword, has_melee
 from .er_rules import can_shop
-from .logic_helpers import has_sword, has_melee
-
-
 if TYPE_CHECKING:
     from . import TunicWorld
+
+
+# just getting an id that is a decent chunk ahead of the grass ones
+breakable_base_id = 509342400 + 8000
 
 
 class BreakableType(IntEnum):
@@ -341,7 +341,6 @@ breakable_location_table: dict[str, TunicLocationData] = {
 }
 
 
-breakable_base_id = base_id + 8000
 breakable_location_name_to_id: dict[str, int] = {name: breakable_base_id + index
                                                  for index, name in enumerate(breakable_location_table)}
 
@@ -359,7 +358,6 @@ loc_group_convert: dict[str, str] = {
     "Beneath the Well Main": "Beneath the Well",
     "Well Boss": "Dark Tomb Checkpoint",
     "Dark Tomb Main": "Dark Tomb",
-    "Magic Dagger House": "West Garden House",
     "Fortress Courtyard Upper": "Fortress Courtyard",
     "Fortress Courtyard Upper pot": "Fortress Courtyard",
     "Fortress Courtyard west pots": "Fortress Courtyard",
@@ -372,16 +370,13 @@ loc_group_convert: dict[str, str] = {
     "Fortress Grave Path westmost pot": "Fortress Grave Path",
     "Fortress Grave Path pots": "Fortress Grave Path",
     "Dusty": "Fortress Leaf Piles",
-    "Frog Stairs Upper": "Frog Stairway",
-    "Frog's Domain Front": "Frog's Domain",
-    "Frog's Domain Main": "Frog's Domain",
+    "Frog Stairs Upper": "Frog Stairs",
     "Quarry Monastery Entry": "Quarry",
     "Quarry Back": "Quarry",
     "Lower Quarry": "Quarry",
     "Lower Quarry upper pots": "Quarry",
     "Even Lower Quarry": "Quarry",
     "Monastery Back": "Monastery",
-    "Cathedral Main": "Cathedral",
 }
 
 

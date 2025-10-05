@@ -71,7 +71,7 @@ class LinksAwakeningWebWorld(WebWorld):
         "setup/en",
         ["zig"]
     )]
-    theme = "ocean"
+    theme = "dirt"
     option_groups = ladx_option_groups
     options_presets: typing.Dict[str, typing.Dict[str, typing.Any]] = {
         "Keysanity": {

@@ -74,12 +74,13 @@ class EntranceLookup:
         if entrance in self._expands_graph_cache:
             return self._expands_graph_cache[entrance]
 
-        seen = {entrance.connected_region}
+        visited = set()
         q: deque[Region] = deque()
         q.append(entrance.connected_region)
 
         while q:
             region = q.popleft()
+            visited.add(region)
 
             # check if the region itself is progression
             if region in region.multiworld.indirect_connections:
@@ -102,8 +103,7 @@ class EntranceLookup:
                         and exit_ in self._usable_exits):
                     self._expands_graph_cache[entrance] = True
                     return True
-                elif exit_.connected_region and exit_.connected_region not in seen:
-                    seen.add(exit_.connected_region)
+                elif exit_.connected_region and exit_.connected_region not in visited:
                     q.append(exit_.connected_region)
 
         self._expands_graph_cache[entrance] = False
