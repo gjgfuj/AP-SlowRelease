@@ -5,6 +5,7 @@ from BaseClasses import Region
 import asyncio
 import random
 tracker_loaded = True
+from worlds.tracker import DeferredEntranceMode
 from worlds.tracker.TrackerClient import TrackerGameContext, TrackerCommandProcessor
 
 class SlowReleaseCommandProcessor(TrackerCommandProcessor):
@@ -43,7 +44,7 @@ class SlowReleaseContext(TrackerGameContext):
                 regions = [*map(lambda e: e.connected_region,self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id).get_exits())]
                 if self.region_mode:
                     while not goal_location:
-                        for location in self.tracker_core.locations_available:
+                        for location in random.shuffle(self.tracker_core.locations_available):
                             location = world.get_location(world.location_id_to_name[location])
                             if location.parent_region == current_region:
                                 goal_location = location.address
@@ -52,7 +53,7 @@ class SlowReleaseContext(TrackerGameContext):
                         if not goal_location:
                             current_region = random.choice(regions)
                             if current_region not in visited_regions:
-                                regions += [*map(lambda e: e.connected_region, current_region.get_exits())]
+                                regions += [*filter(lambda e: e not in regions and e not in visited_regions, map(lambda e: e.connected_region, current_region.get_exits()))]
                             visited_regions.append(current_region)
                             regions.remove(current_region)
                             self.autoplayer_log(f"Attempting to go to: {current_region.name}")
@@ -103,6 +104,7 @@ def launch(*args):
         ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
 
         if tracker_loaded:
+            ctx.tracker_core.enforce_deferred_connections = DeferredEntranceMode.disabled
             ctx.run_generator()
         if gui_enabled:
             ctx.run_gui()
