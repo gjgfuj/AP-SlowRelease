@@ -9,18 +9,25 @@ from worlds.tracker import DeferredEntranceMode
 from worlds.tracker.TrackerClient import TrackerGameContext, TrackerCommandProcessor
 
 class SlowReleaseCommandProcessor(TrackerCommandProcessor):
-    def _cmd_time(self, time):
-        """Set the time per check. Value in seconds."""
-        self.ctx.time_per = float(time)
-        logger.info(f"Set time per check to {self.ctx.time_per}")
-
+    def _cmd_time(self, time_min=None, time_max=None):
+        """If no arguments are provided, show the time per check. Else, set the time per check. Value in seconds. If two numbers are provided, then set a range to be randomly decided per check."""
+        if time_min:
+            self.ctx.time_per_min = float(time_min)
+            if time_max and float(time_min) < float(time_max):
+                self.ctx.time_per_max = float(time_max)
+            else:
+                self.ctx.time_per_max = float(time_min)
+            logger.info(f"Set time per check to {self.ctx.time_per_min}-{self.ctx.time_per_max}s")
+        else:
+            logger.info(f"Time per check is {self.ctx.time_per_min}-{self.ctx.time_per_max}s")
     def _cmd_region_mode(self):
         """Toggle Region mode (i.e. make the slow release client act more like a player by handling one region of the world at a time.)"""
         self.ctx.region_mode = not self.ctx.region_mode
         logger.info(f"Set region mode to {self.ctx.region_mode}")
 
 class SlowReleaseContext(TrackerGameContext):
-    time_per = 10
+    time_per_min = 10
+    time_per_max = 10
     tags = ["SlowRelease", "Tracker"]
     game = ""
     has_game = False
@@ -44,7 +51,9 @@ class SlowReleaseContext(TrackerGameContext):
                 regions = [*map(lambda e: e.connected_region,self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id).get_exits())]
                 if self.region_mode:
                     while not goal_location:
-                        for location in random.shuffle(self.tracker_core.locations_available):
+                        randolocs = self.tracker_core.locations_available.copy()
+                        random.shuffle(randolocs)
+                        for location in randolocs:
                             location = world.get_location(world.location_id_to_name[location])
                             if location.parent_region == current_region:
                                 goal_location = location.address
@@ -61,7 +70,7 @@ class SlowReleaseContext(TrackerGameContext):
                 else:
                     goal_location = random.choice(self.tracker_core.locations_available)
                     self.autoplayer_log(f"Going for {self.location_names.lookup_in_game(goal_location)}")
-                await asyncio.sleep(self.time_per)
+                await asyncio.sleep(random.uniform(self.time_per_min, self.time_per_max))
                 await self.check_locations([goal_location])
                 await asyncio.sleep(0.1)
             else:
