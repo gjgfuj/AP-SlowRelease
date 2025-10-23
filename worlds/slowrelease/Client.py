@@ -11,15 +11,7 @@ from worlds.tracker.TrackerClient import TrackerGameContext, TrackerCommandProce
 class SlowReleaseCommandProcessor(TrackerCommandProcessor):
     def _cmd_time(self, time_min=None, time_max=None):
         """If no arguments are provided, show the time per check. Else, set the time per check. Value in seconds. If two numbers are provided, then set a range to be randomly decided per check."""
-        if time_min:
-            self.ctx.time_per_min = float(time_min)
-            if time_max and float(time_min) < float(time_max):
-                self.ctx.time_per_max = float(time_max)
-            else:
-                self.ctx.time_per_max = float(time_min)
-            logger.info(f"Set time per check to {self.ctx.time_per_min}-{self.ctx.time_per_max}s")
-        else:
-            logger.info(f"Time per check is {self.ctx.time_per_min}-{self.ctx.time_per_max}s")
+        self.ctx.set_time(time_min, time_max)
     def _cmd_region_mode(self):
         """Toggle Region mode (i.e. make the slow release client act more like a player by handling one region of the world at a time.)"""
         self.ctx.region_mode = not self.ctx.region_mode
@@ -36,6 +28,16 @@ class SlowReleaseContext(TrackerGameContext):
     autoplayer_task = None
     def autoplayer_log(self, message):
         logger.info(message)
+    def set_time(self, time_min=None, time_max=None):
+        if time_min:
+            self.time_per_min = float(time_min)
+            if time_max and float(time_min) < float(time_max):
+                self.time_per_max = float(time_max)
+            else:
+                self.time_per_max = float(time_min)
+            logger.info(f"Set time per check to {self.time_per_min}-{self.time_per_max}s")
+        else:
+            logger.info(f"Time per check is {self.time_per_min}-{self.time_per_max}s")
     async def autoplayer(self):
         print("Autoplayer")
         inbk = False
@@ -111,6 +113,7 @@ def launch(*args):
         ctx = SlowReleaseContext(args.connect, args.password)
         ctx.auth = args.name
         ctx.server_task = asyncio.create_task(server_loop(ctx), name="server loop")
+        ctx.set_time(args.time, args.time_max)
 
         if tracker_loaded:
             ctx.tracker_core.enforce_deferred_connections = DeferredEntranceMode.disabled
@@ -126,6 +129,8 @@ def launch(*args):
 
     parser = get_base_parser(description="Slow Release Archipelago Client, for text interfacing.")
     parser.add_argument('--name', default=None, help="Slot Name to connect as.")
+    parser.add_argument('--time', type=float, default=10.0, help="Minimum time per check in seconds. If maximum is not specified, defaults to this.")
+    parser.add_argument('--time_max', type=float, default=None, help="Maximum time per check.")
     parser.add_argument("url", nargs="?", help="Archipelago connection url")
     args = parser.parse_args(args)
 
