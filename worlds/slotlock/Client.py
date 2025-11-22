@@ -11,15 +11,18 @@ import asyncio
 class SlotLockCommandProcessor(ClientCommandProcessor):
     ctx: "SlotLockContext"
     def _cmd_clear_autohint(self):
+        """Clear the autohint queue."""
         self.ctx.auto_hint_queue = []
         logger.info("Cleared autohint queue.")
     @mark_raw
     def _cmd_queue_autohint(self, item=None):
+        """Queue something to the autohint queue."""
         if item:
             self.ctx.auto_hint_queue.append(item)
         logger.info(f"Autohint queue: {self.ctx.auto_hint_queue}")
         self.ctx.checking_hints = False
     def _cmd_toggle_autohint(self):
+        """Toggle the autohint."""
         logger.info(f"Toggling Locked Autohint to {not self.ctx.auto_hint_locked_items}")
         self.ctx.auto_hint_locked_items = not self.ctx.auto_hint_locked_items
         self.ctx.checking_hints =  False
@@ -32,6 +35,7 @@ class SlotLockCommandProcessor(ClientCommandProcessor):
         self.ctx.use_server_password = password
         asyncio.create_task(self.ctx.send_msgs([{"cmd": "Say", "text": f"!admin login {password}"}]))
     def _cmd_unlocked_slots(self):
+        """List all unlocked slots."""
         for slot in self.ctx.unlocked_slots:
             logger.info(f"{slot}")
 
@@ -69,6 +73,7 @@ class SlotLockContext(CommonContext):
         ui.base_title = "Slotlock Client"
         return ui
     async def check_hints(self):
+        #print("Checking Hints.")
         if f"_read_hints_{self.team}_{self.slot}" in self.stored_data:
             hintdata = self.stored_data[f"_read_hints_{self.team}_{self.slot}"].copy()
             for slot in self.player_names:
@@ -78,7 +83,6 @@ class SlotLockContext(CommonContext):
                     #print(f"{player_name}: {self.stored_data[f"_read_hints_{self.team}_{slot}"]}")
             hinted_count = {}
             loc_count = {}
-            real_hint_cost = max(1, int(self.hint_cost * 0.01 * self.total_locations))
             for location in self.server_locations:
                 if location // 10 in loc_count:
                     loc_count[location // 10] += 1
@@ -93,7 +97,7 @@ class SlotLockContext(CommonContext):
                     if any(item.item == hint["item"] for item in self.items_received):
                         if hasattr(self, "update_hint") and hint["status"] == HintStatus.HINT_PRIORITY:
                             self.update_hint(hint["location"],hint["finding_player"], HintStatus.HINT_NO_PRIORITY)
-            if len(self.auto_hint_queue) > 0 and (self.hint_points >= real_hint_cost or self.use_server_password):
+            if len(self.auto_hint_queue) > 0:
                 await self.send_hint(self.auto_hint_queue.pop(0))
                 await asyncio.sleep(1)
                 self.checking_hints = False
@@ -105,19 +109,18 @@ class SlotLockContext(CommonContext):
                             hinted_count[hint["location"]// 10] = 0
                         if (not "status" in hint) or hint["status"] == HintStatus.HINT_PRIORITY:
                             if not hint["found"] and hinted_count[hint["location"]//10] < 1:
-                                if self.hint_points >= real_hint_cost:
-                                    await self.send_hint(self.item_names.lookup_in_game(hint["location"]//10, "SlotLock"))
-                                    self.checking_hints = False
-                                    await asyncio.sleep(2)
-                                    return
+                                await self.send_hint(self.item_names.lookup_in_game(hint["location"]//10, "SlotLock"))
+                                self.checking_hints = False
+                                await asyncio.sleep(2)
+                                return
                     elif hint["finding_player"] in self.locked_slots_nums:
                         if (not "status" in hint) or hint["status"] == HintStatus.HINT_PRIORITY:
-                            if (not hint["found"]) and (self.hint_points >= real_hint_cost or self.use_server_password):
+                            if (not hint["found"]):
                                 hinted = False
                                 for ahint in hintdata:
                                     if self.slot_concerns_self(ahint["receiving_player"]) and ahint["item"] == hint["finding_player"]+1001:
                                         hinted = True
-                                #print(f"Already hinted for {hint}: {hinted}")
+                                print(f"Already hinted for {hint}: {hinted}")
                                 if not hinted:
                                     await self.send_hint(f"Unlock {self.player_names[hint['finding_player']]}")
                                     await asyncio.sleep(2)
@@ -133,12 +136,9 @@ class SlotLockContext(CommonContext):
         if item_name in self.has_hinted:
             return
         self.has_hinted.append(item_name)
-        if self.use_server_password:
-            await self.send_msgs([{"cmd": "Say", "text": f"!admin login {self.use_server_password}"}])
-            await asyncio.sleep(1)
-            await self.send_msgs([{"cmd": "Say", "text": f"!admin /hint {self.username} {item_name}"}])
-        else:
-            await self.send_msgs([{"cmd": "Say", "text": f"!hint {item_name}"}])
+        for loc in self.item_locations[item_name]:
+            print(f"{item_name}, {loc}")
+            await self.send_msgs([{"cmd": "CreateHints", "player": loc[0], "locations": [loc[1]]}])
     def update_auto_locations(self):
         self.unlocked_slots = []
         received_items = [*map(lambda item: self.item_names.lookup_in_game(item.item, "SlotLock"), self.items_received)]
@@ -165,6 +165,7 @@ class SlotLockContext(CommonContext):
             self.bonus_item_slots = args["slot_data"]["bonus_item_slots"]
             self.bonus_item_copies = args["slot_data"]["bonus_item_copies"]
             self.bonus_item_filler = args["slot_data"]["bonus_item_filler"]
+            self.item_locations = args["slot_data"]["item_locations"]
             self.connected = True
             asyncio.create_task(self.run_checking_hints())
             try:

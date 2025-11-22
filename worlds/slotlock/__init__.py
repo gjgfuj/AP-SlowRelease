@@ -72,12 +72,11 @@ class RandomUnlockedSlots(Range):
     default = 0
     range_start = 0
     range_end = 100
-class AutoHintLockedItems(Choice):
-    """Whether the slotlock client should automatically ask for a hint (as long as it has enough hint points) when one of its items are hinted. Does not include items in locked worlds, only locations belonging to slotlock itself. If 'admin', will automatically log in using the admin password in host.yaml and perform server hints."""
+class AutoHintLockedItems(Toggle):
+    """Whether the slotlock client should automatically scout locations in other worlds where its items are if one of its items are hinted."""
     default = 0
     option_no = 0
     option_yes = 1
-    option_admin = 2
     alias_true = 1
     alias_false = 0
 class AssociatedWorlds(OptionDict):
@@ -290,6 +289,10 @@ class SlotLockWorld(AutoWorld.World):
                         return state.has(f"Unlock {slot}", self.player)
                     self.get_location(f"Free Item {slot} {i+1}").access_rule = rule
     def fill_slot_data(self):
+        item_locations : Dict[str, list[tuple[int, int]]] = {}
+        for item in self.multiworld.get_items():
+            if item.player == self.player:
+                item_locations[item.name] = list(map(lambda loc: (loc.player, loc.address),self.multiworld.find_item_locations(item.name, self.player, True)))
         return {
             "free_starting_items": self.options.free_starting_items.value,
             "auto_hint_locked_items": self.options.auto_hint_locked_items.value,
@@ -298,13 +301,14 @@ class SlotLockWorld(AutoWorld.World):
             "unlock_item_filler": min(10- self.options.unlock_item_copies.value, self.options.unlock_item_filler.value),
             "bonus_item_copies": self.options.bonus_item_copies.value,
             "bonus_item_filler": min(10- self.options.bonus_item_copies.value, self.options.bonus_item_filler.value),
-            "bonus_item_slots": self.options.bonus_item_slots.value
+            "bonus_item_slots": self.options.bonus_item_slots.value,
+            "item_locations": item_locations
         }
     def post_fill(self) -> None:
         pass
     def collect(self,state: CollectionState, item: Item):
         res = super().collect(state,item)
-        if "Unlock " in item.name and item.name.split("Unlock ")[1] in self.slots_to_lock:
+        if res and "Unlock " in item.name and item.name.split("Unlock ")[1] in self.slots_to_lock:
             player_name = item.name.split("Unlock ")[1]
             for world in self.multiworld.worlds:
                 if self.multiworld.worlds[world].player_name == player_name:
@@ -313,7 +317,7 @@ class SlotLockWorld(AutoWorld.World):
         return res
     def remove(self,state: CollectionState, item: Item):
         res = super().remove(state,item)
-        if "Unlock " in item.name and item.name.split("Unlock ")[1] in self.slots_to_lock:
+        if res and "Unlock " in item.name and item.name.split("Unlock ")[1] in self.slots_to_lock:
             player_name = item.name.split("Unlock ")[1]
             for world in self.multiworld.worlds:
                 if world.player_name == player_name:
@@ -337,7 +341,8 @@ class SlotLockWorld(AutoWorld.World):
         structure is {player_id: {location_id: text}} You will need to insert your own player_id.
         """
         data = {}
-        for location in self.get_locations():
-           data[location.address] = str(self.multiworld.find_item_locations(self.item_id_to_name[location.address // 10],self.player, True)).removeprefix("[").removesuffix("]")
+        if self.options.auto_hint_locked_items.value > 0:
+            for location in self.get_locations():
+                data[location.address] = str(self.multiworld.find_item_locations(self.item_id_to_name[location.address // 10],self.player, True)).removeprefix("[").removesuffix("]")
         hint_data[self.player] = data
 
