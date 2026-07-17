@@ -45,6 +45,7 @@ class SlowReleaseContext(TrackerGameContext):
             await asyncio.sleep(1)
         world: World = self.tracker_core.multiworld.worlds[self.tracker_core.player_id]
         current_region : Region = self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id)
+        displayed_region: Region = None
         while True:
             if len(self.tracker_core.locations_available) > 0:
                 inbk = False
@@ -59,6 +60,9 @@ class SlowReleaseContext(TrackerGameContext):
                             location = world.get_location(world.location_id_to_name[location])
                             if location.parent_region == current_region:
                                 goal_location = location.address
+                                if displayed_region != current_region:
+                                    displayed_region = current_region
+                                    self.autoplayer_log(f"Currently in {current_region.name}")
                                 self.autoplayer_log(f"Going for {self.location_names.lookup_in_game(goal_location)}")
                                 break
                         if not goal_location:
@@ -67,7 +71,7 @@ class SlowReleaseContext(TrackerGameContext):
                                 regions += [*filter(lambda e: e not in regions and e not in visited_regions, map(lambda e: e.connected_region, current_region.get_exits()))]
                             visited_regions.append(current_region)
                             regions.remove(current_region)
-                            self.autoplayer_log(f"Attempting to go to: {current_region.name}")
+                            print(f"Attempting to go to: {current_region.name}")
                             await asyncio.sleep(0.1)
                 else:
                     goal_location = random.choice(self.tracker_core.locations_available)
