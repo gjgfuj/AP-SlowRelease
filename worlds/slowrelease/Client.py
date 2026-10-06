@@ -20,7 +20,7 @@ class SlowReleaseCommandProcessor(TrackerCommandProcessor):
 class SlowReleaseContext(TrackerGameContext):
     time_per_min = 10
     time_per_max = 10
-    tags = ["SlowRelease", "Tracker"]
+    tags = {"SlowRelease", "Tracker"}
     game = ""
     has_game = False
     region_mode = True
@@ -101,12 +101,12 @@ class SlowReleaseContext(TrackerGameContext):
             _ = autoplayer_task.result()
         except Exception as e:
             logger.error("Autoplayer Error", exc_info=True)
-    def disconnect(self, *args):
+    def disconnect(self, allow_autoreconnect: bool = False):
         if self.autoplayer_task:
             self.autoplayer_task.cancel()
         if "Tracker" not in self.tags:
-            self.tags.append("Tracker")
-        return super().disconnect(*args)
+            self.tags.add("Tracker")
+        return super().disconnect(allow_autoreconnect)
 def launch(*args):
 
     async def main(args):
