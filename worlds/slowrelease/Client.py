@@ -1,5 +1,6 @@
 
 from CommonClient import ClientCommandProcessor, CommonContext, logger, server_loop, gui_enabled, get_base_parser
+from NetUtils import HintStatus
 from worlds.AutoWorld import World
 from BaseClasses import Region
 import asyncio
@@ -51,7 +52,15 @@ class SlowReleaseContext(TrackerGameContext):
                 goal_location = None
                 visited_regions = []
                 regions = [*map(lambda e: e.connected_region,self.tracker_core.multiworld.get_region(world.origin_region_name, self.tracker_core.player_id).get_exits())]
-                if self.region_mode:
+                hinted_locations = [
+                                    location for location in self.tracker_core.locations_available
+                                    if self.tracker_core.hints.get(location) == HintStatus.HINT_PRIORITY
+                                    ]
+                if hinted_locations:
+                    goal_location = random.choice(hinted_locations)
+                    current_region = world.get_location(world.location_id_to_name[goal_location]).parent_region
+                    self.autoplayer_log(f"Going for hinted check: {self.location_names.lookup_in_game(goal_location)}")
+                elif self.region_mode:
                     while not goal_location:
                         randolocs = self.tracker_core.locations_available.copy()
                         random.shuffle(randolocs)
