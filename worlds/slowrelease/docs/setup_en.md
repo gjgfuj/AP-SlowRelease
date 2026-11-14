@@ -16,3 +16,5 @@ Open Archipelago Launcher, and open `Slow Release Client`. Two commands are rele
 Those commands and what they do are also listed at the bottom of the command list displayed every time you launch the Slow Release Client.
 
 From there you just need to connect to the slot, and it will start slow releasing.
+
+Reachable checks with hints marked priority (`HINT_PRIORITY`) are always released before other checks, even when they are in a different region. If several priority hinted checks are reachable, one is chosen randomly. Hints with any other status are not prioritized. In region mode, the client continues from the chosen priority hinted check's region. When no priority hinted checks are reachable, normal region or random selection applies.
